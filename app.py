@@ -44,6 +44,10 @@ def redirect_url(short_id):
     else:
         return "URL not found", 404
 
+@app.route('/shortcuts')
+def display_shortcuts():
+    return render_template('shortcuts.html', shortcuts=url_mapping)
+
 def generate_short_id(num_chars=6):
     return ''.join(random.choices(string.ascii_letters+string.digits,k=num_chars))
 

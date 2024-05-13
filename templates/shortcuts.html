@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Shortcuts</title>
+</head>
+<body>
+    <h1>URL Shortcuts</h1>
+    <ul>
+        {% for short_id, url in shortcuts.items() %}
+        <li>
+            <strong>Short ID:</strong> {{ short_id }}<br>
+            <strong>URL:</strong> {{ url }}
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
