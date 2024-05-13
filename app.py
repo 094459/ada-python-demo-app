@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, json, redirect
 import string
 import random
 
 app = Flask(__name__)
 
 url_mapping = {}
+URL_MAPPINGS_FILE = 'url_mappings.json'
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_url():
@@ -12,6 +13,21 @@ def add_url():
         url = request.form['url']
         short_id = generate_short_id()
         url_mapping[short_id] = url
+
+        # Load existing mappings from the file
+        try:
+            with open(URL_MAPPINGS_FILE, 'r') as f:
+                url_mappings = json.load(f)
+        except FileNotFoundError:
+            url_mappings = {}
+
+        # Update the mappings with the new entry
+        url_mappings[short_id] = url
+
+        # Write the updated mappings back to the file
+        with open(URL_MAPPINGS_FILE, 'w') as f:
+            json.dump(url_mappings, f)
+
         return short_id
     return render_template('add.html')
 
