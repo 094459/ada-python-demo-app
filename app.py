@@ -8,7 +8,7 @@ url_mapping = {}
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_url():
-    if request.method == 'POST':
+    if request.methods == 'POST':
         url = request.form['url']
         short_id = generate_short_id()
         url_mapping[short_id] = url
