@@ -2,10 +2,19 @@ from flask import Flask, render_template, request, json
 import string
 import random
 
-app = Flask(__name__)
-
 url_mapping = {}
 URL_MAPPINGS_FILE = 'url_mappings.json'
+
+def load_url_mappings():
+    print("Loading URL mappings from file:", URL_MAPPINGS_FILE)
+    global url_mapping
+    try:
+        with open(URL_MAPPINGS_FILE, 'r') as f:
+            url_mapping = json.load(f)
+    except FileNotFoundError:
+        pass
+
+app = Flask(__name__)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_url():
@@ -52,4 +61,5 @@ def generate_short_id(num_chars=6):
     return ''.join(random.choices(string.ascii_letters+string.digits,k=num_chars))
 
 if __name__ == '__main__':
+    load_url_mappings()
     app.run(debug=False)
