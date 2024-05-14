@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Add URL</title>
+</head>
 <body>
-    <h1>URL Shortener</h1>
-    <form method="post">
-        <label for="url">Enter URL:</label><br>
-        <input type="text" name="url"><br>
-        <input type="submit" value="Shorten">
+    <h1>Add URL</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form method="post" action="{{ url_for('add_url') }}">
+        <label for="url">URL:</label>
+        <input type="text" id="url" name="url" required>
+        <button type="submit">Create Shortcut</button>
     </form>
 </body>
 </html>

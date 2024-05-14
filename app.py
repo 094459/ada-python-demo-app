@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, json
+from flask import Flask, render_template, request, json, flash, redirect, url_for
 import string
 import random
 import os
@@ -17,6 +17,8 @@ def load_url_mappings():
         pass
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')
+
 # Connect to the PostgreSQL database
 conn = psycopg2.connect(
     host=os.environ.get('DB_HOST'),
@@ -42,19 +44,39 @@ cur.close()
 def add_url():
     if request.method == 'POST':
         url = request.form['url']
-        short_id = generate_short_id()
+        if not url:
+            flash('Please enter a valid URL', 'error')
+            return redirect(url_for('add_url'))
 
         cur = conn.cursor()
-        try:
-            cur.execute("INSERT INTO shortcuts (shortcut, url) VALUES (%s, %s)", (short_id, url))
-        except psycopg2.IntegrityError:
-            print(f"Error: Shortcut '{short_id}' already exists.")
-            return "Error: Shortcut already exists.", 400
+        cur.execute("SELECT COUNT(*) FROM shortcuts WHERE url = %s", (url,))
+        count = cur.fetchone()[0]
+        cur.close()
 
+        if count > 0:
+            flash('The URL already exists', 'error')
+            return redirect(url_for('add_url'))
+
+        # Generate a unique shortcut
+        shortcut = generate_short_id()
+        while True:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM shortcuts WHERE shortcut = %s", (shortcut,))
+            count = cur.fetchone()[0]
+            cur.close()
+            if count == 0:
+                break
+            shortcut = generate_short_id()
+
+        # Save the shortcut and URL to the database
+        cur = conn.cursor()
+        cur.execute("INSERT INTO shortcuts (shortcut, url) VALUES (%s, %s)", (shortcut, url))
         conn.commit()
         cur.close()
 
-        return short_id
+        flash('Shortcut created', 'success')
+        return redirect(url_for('add_url'))
+
     return render_template('add.html')
 
 # Add a route that displays an about page that explains what the app does
