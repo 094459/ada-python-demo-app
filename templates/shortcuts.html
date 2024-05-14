@@ -6,9 +6,9 @@
 <body>
     <h1>Shortcuts</h1>
     <ul>
-        {% for shortcut, url in shortcuts %}
+        {% for shortcut, url, timestamp in shortcuts %}
         <li>
-            <strong>{{ shortcut }}</strong>: {{ url }}
+            <strong>{{ shortcut }}</strong>: {{ url }} ({{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }})
         </li>
         {% endfor %}
     </ul>

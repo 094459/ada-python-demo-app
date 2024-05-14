@@ -31,7 +31,8 @@ cur.execute("""
     CREATE TABLE IF NOT EXISTS shortcuts (
         id SERIAL PRIMARY KEY,
         shortcut TEXT UNIQUE NOT NULL,
-        url TEXT NOT NULL
+        url TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 """)
 conn.commit()
@@ -72,7 +73,7 @@ def redirect_url(short_id):
 @app.route('/shortcuts')
 def display_shortcuts():
     cur = conn.cursor()
-    cur.execute("SELECT shortcut, url FROM shortcuts")
+    cur.execute("SELECT shortcut, url, created_at FROM shortcuts ORDER BY created_at DESC")
     shortcuts = cur.fetchall()
     cur.close()
     return render_template('shortcuts.html', shortcuts=shortcuts)
