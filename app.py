@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, json
 import string
 import random
+import os
+import psycopg2
 
 url_mapping = {}
 URL_MAPPINGS_FILE = 'url_mappings.json'
@@ -15,27 +17,41 @@ def load_url_mappings():
         pass
 
 app = Flask(__name__)
+# Connect to the PostgreSQL database
+conn = psycopg2.connect(
+    host=os.environ.get('DB_HOST'),
+    database=os.environ.get('DB_NAME'),
+    user=os.environ.get('DB_USER'),
+    password=os.environ.get('DB_PASSWORD')
+)
+
+# Create a table to store the shortcuts if it doesn't exist
+cur = conn.cursor()
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS shortcuts (
+        id SERIAL PRIMARY KEY,
+        shortcut TEXT UNIQUE NOT NULL,
+        url TEXT NOT NULL
+    )
+""")
+conn.commit()
+cur.close()
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_url():
     if request.method == 'POST':
         url = request.form['url']
         short_id = generate_short_id()
-        url_mapping[short_id] = url
 
-        # Load existing mappings from the file
+        cur = conn.cursor()
         try:
-            with open(URL_MAPPINGS_FILE, 'r') as f:
-                url_mappings = json.load(f)
-        except FileNotFoundError:
-            url_mappings = {}
+            cur.execute("INSERT INTO shortcuts (shortcut, url) VALUES (%s, %s)", (short_id, url))
+        except psycopg2.IntegrityError:
+            print(f"Error: Shortcut '{short_id}' already exists.")
+            return "Error: Shortcut already exists.", 400
 
-        # Update the mappings with the new entry
-        url_mappings[short_id] = url
-
-        # Write the updated mappings back to the file
-        with open(URL_MAPPINGS_FILE, 'w') as f:
-            json.dump(url_mappings, f)
+        conn.commit()
+        cur.close()
 
         return short_id
     return render_template('add.html')
