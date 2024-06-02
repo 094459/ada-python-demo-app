@@ -46,4 +46,4 @@ def generate_short_id(num_chars=6):
     return ''.join(random.choices(string.ascii_letters+string.digits,k=num_chars))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)
+    app.run(debug=True)
