@@ -12,7 +12,7 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    <form method="post" action="{{ url_for('add_url') }}">
+    <form method="post">
         <label fomr="url">URL:</label>
         <input type="text" id="url" name="url" required>
         <button type="submit">Create Shortcut</button>
