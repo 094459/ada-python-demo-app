@@ -22,26 +22,31 @@ def is_valid_url(url):
     """
     return bool(re.match(url_pattern, url))
 
-# Connect to the PostgreSQL database
-conn = psycopg2.connect(
-    host=os.environ.get('DB_HOST'),
-    database=os.environ.get('DB_NAME'),
-    user=os.environ.get('DB_USER'),
-    password=os.environ.get('DB_PASSWORD')
-)
-        
-# Create a table to store the shortcuts if it doesn't exist
-cur = conn.cursor()
-cur.execute("""
-    CREATE TABLE IF NOT EXISTS shortcuts (
-        id SERIAL PRIMARY KEY,
-        shortcut TEXT UNIQUE NOT NULL,
-        url TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-""")
-conn.commit()
-cur.close()
+def connect_to_database():
+    """
+    Connects to the database and returns the connection object.
+
+    Returns:
+        psycopg2.connection: The connection object.
+    """
+    db_host = os.environ.get('DB_HOST')
+    db_name = os.environ.get('DB_NAME')
+    db_user = os.environ.get('DB_USER')
+    db_password = os.environ.get('DB_PASSWORD')
+
+    try:
+        conn = psycopg2.connect(
+            host=db_host,
+            database=db_name,
+            user=db_user,
+            password=db_password
+        )
+        return conn
+    except (Exception, psycopg2.Error) as error:
+        print("Error connecting to the database", error)
+        return None
+
+
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_url():
@@ -54,6 +59,9 @@ def add_url():
     Returns:
         Rendered template or redirect response based on the request method and success/failure of the operation.
     """
+    conn = connect_to_database()
+    if not conn:
+        return "Error connecting to the database", 503
     if request.method == 'POST':
         url = request.form['url']
         if is_valid_url(url):
@@ -82,12 +90,24 @@ def add_url():
             cur.execute("INSERT INTO shortcuts (shortcut, url) VALUES (%s, %s)", (shortcut, url))
             conn.commit()
             cur.close()
+            conn.close()
 
             flash('Shortcut created', 'success')
             return redirect(url_for('add_url'))
         else:
             return "Invalid URL", 400
     return render_template('add.html')
+
+# Add a root for / that displays a welcome message
+@app.route('/')
+def index():
+    """
+    Handles the '/' route for displaying a welcome message.
+
+    Returns:
+        Rendered 'index.html' template with a welcome message.
+    """
+    return render_template('index.html')
 
 # Add a route that displays an about page that explains what the app does
 @app.route('/about')
@@ -111,10 +131,14 @@ def redirect_url(short_id):
     Returns:
         Redirect response to the long URL if the shortcut exists, or a 404 error if the shortcut is not found.
     """
+    conn = connect_to_database()
+    if not conn:
+        return "Error connecting to the database", 503
     cur = conn.cursor()
     cur.execute("SELECT url FROM shortcuts WHERE shortcut = %s", (short_id,))
     result = cur.fetchone()
     cur.close()
+    conn.close()
 
     if result:
         url = result[0]
@@ -130,10 +154,14 @@ def display_shortcuts():
     Returns:
         Rendered 'shortcuts.html' template with a list of shortcuts and their details.
     """
+    conn = connect_to_database()
+    if not conn:
+        return "Error connecting to the database", 503
     cur = conn.cursor()
     cur.execute("SELECT shortcut, url, created_at FROM shortcuts ORDER BY created_at DESC")
     shortcuts = cur.fetchall()
     cur.close()
+    conn.close()
     return render_template('shortcuts.html', shortcuts=shortcuts)
 
 def generate_short_id(num_chars=6):
@@ -149,4 +177,17 @@ def generate_short_id(num_chars=6):
     return ''.join(random.choices(string.ascii_letters+string.digits,k=num_chars))
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    conn = connect_to_database()
+    if conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS shortcuts (
+                    id SERIAL PRIMARY KEY,
+                    shortcut TEXT UNIQUE NOT NULL,
+                    url TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+    else:
+        print("Failed to establish a database connection")
+    app.run(host='0.0.0.0', debug=False)

@@ -3,11 +3,11 @@ volumes:
   psql:
 services:
   psql:
-    image: postgres
+    image: postgres:15.6
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: change-me
     volumes:
-      - psql:/var/lib/postgresql/data 
+      - psql:/var/lib/postgresql/data15 
     ports:
       - 5432:5432
