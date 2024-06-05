@@ -176,18 +176,18 @@ def generate_short_id(num_chars=6):
     """
     return ''.join(random.choices(string.ascii_letters+string.digits,k=num_chars))
 
-if __name__ == '__main__':
-    conn = connect_to_database()
-    if conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS shortcuts (
-                    id SERIAL PRIMARY KEY,
-                    shortcut TEXT UNIQUE NOT NULL,
-                    url TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-    else:
-        print("Failed to establish a database connection")
-    app.run(host='0.0.0.0', debug=False)
+# if __name__ == '__main__':
+#     conn = connect_to_database()
+#     if conn:
+#         with conn.cursor() as cur:
+#             cur.execute("""
+#                 CREATE TABLE IF NOT EXISTS shortcuts (
+#                     id SERIAL PRIMARY KEY,
+#                     shortcut TEXT UNIQUE NOT NULL,
+#                     url TEXT NOT NULL,
+#                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+#                 )
+#             """)
+#     else:
+#         print("Failed to establish a database connection")
+#     app.run()
